@@ -66,6 +66,12 @@ class HandwrittenWords(Dataset):
         return word, seq
 
     def visualisation(self, idx):
+        word, seq = self[idx]
+        word=''.join([self.int2symb[entier] for entier in word])
+
+        plt.plot(seq[0],seq[1],'-')
+        plt.title(word)
+        plt.show()
         # Visualisation des échantillons
         # À compléter (optionel)
         pass
