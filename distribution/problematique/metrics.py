@@ -31,9 +31,21 @@ def edit_distance(token1,token2):
     return distances[len(token1)][len(token2)]
 
 
-def confusion_matrix(true, pred, ignore=[]):
+def confusion_matrix(true, pred, ignore=[0, 2]):
     # Calcul de la matrice de confusion
+    confus_mat = np.zeros((8, 8))       # ATTENTION : AUGMENTER LA TAILLE DE LA MATRICE A 29 * 29
 
-    # À compléter
+    for i in range(len(true)):
+        if true[i] not in ignore or pred[i] not in ignore:    # ATTENTION : A GENERALISER AU BATCH
+            confus_mat[true[i], pred[i]] += 1
 
-    return None
+    return confus_mat
+
+
+if __name__ == "__main__":
+    true = [1, 3, 6, 1, 4, 2, 0, 2]
+    pred = [1, 4, 5, 1, 4, 3, 2, 2]
+
+conf = confusion_matrix(true, pred)
+
+print(conf)
