@@ -7,9 +7,14 @@ from torch import nn
 import numpy as np
 import matplotlib.pyplot as plt
 
+mode_dict={
+    'RNN':nn.RNN,
+    'GRU':nn.GRU,
+    'LSTM':nn.LSTM
+}
 
 class Trajectory2seq(nn.Module):
-    def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen, attn=False):
+    def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen, attn=False,mode='RNN'):
         super(Trajectory2seq, self).__init__()
         # Definition des parametres
         self.hidden_dim = hidden_dim
@@ -20,12 +25,13 @@ class Trajectory2seq(nn.Module):
         self.dict_size = dict_size
         self.maxlen = maxlen
         self.attn = attn
-
+        self.mode=mode
         # Definition des couches
         # Couches pour rnn
         self.decoder_embedding = nn.Embedding(self.dict_size, hidden_dim)
-        self.encoder_layer = nn.RNN(457, hidden_dim, n_layers, batch_first=True)
-        self.decoder_layer = nn.RNN(hidden_dim, hidden_dim, n_layers, batch_first=True)
+
+        self.encoder_layer =mode_dict[mode](input_size=457,hidden_size= hidden_dim, num_layers=n_layers, batch_first=True)
+        self.decoder_layer = mode_dict[mode](input_size=hidden_dim,hidden_size= hidden_dim, num_layers=n_layers, batch_first=True)
 
         # Couches pour attention
         self.att_combine = nn.Linear(2*hidden_dim, hidden_dim)
@@ -39,8 +45,12 @@ class Trajectory2seq(nn.Module):
 
     def encoder(self, x):
         # Encodeur
-        out, hidden = self.encoder_layer(x)
-        return out, hidden
+        if self.mode=='LSTM':
+            out, (hidden,c) = self.encoder_layer(x)
+            return out, hidden,c
+        else :
+            out, hidden = self.encoder_layer(x)
+            return out, hidden
 
     def attentionModule(self, query, values):
         # Module d'attention
@@ -54,7 +64,7 @@ class Trajectory2seq(nn.Module):
         attention_output = torch.sum(attention_output, dim=1)
         return attention_output, attention_weights
 
-    def decoder(self, encoder_outs, hidden):
+    def decoder(self, encoder_outs, hidden,c=None):
         # Decodeur
         # Initialisation des variables
         max_len = self.maxlen['en']
@@ -69,7 +79,12 @@ class Trajectory2seq(nn.Module):
         for i in range(max_len):
 
             vec_in = self.decoder_embedding(vec_in)
-            out, hidden = self.decoder_layer(vec_in, hidden)
+
+            if self.mode == 'LSTM':
+                out, (hidden ,c)= self.decoder_layer(vec_in, (hidden,c))
+
+            else:
+                out, hidden = self.decoder_layer(vec_in, hidden)
 
             if self.attn:
                 attn_out, attn_w = self.attentionModule(out, encoder_outs)
@@ -84,8 +99,14 @@ class Trajectory2seq(nn.Module):
 
     def forward(self, x):
         # Passant avant
-        out, h = self.encoder(x)
-        out, hidden, attn = self.decoder(out, h)
+        if self.mode=='LSTM':
+            out, h,c = self.encoder(x)
+            out, hidden, attn = self.decoder(out, h,c)
+        else :
+            out, h = self.encoder(x)
+            out, hidden, attn = self.decoder(out, h)
+
+
         return out, hidden, attn
     
 

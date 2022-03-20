@@ -19,13 +19,13 @@ if __name__ == '__main__':
     gen_test_images = True     # Génération images test?
     seed = 1                # Pour répétabilité
     n_workers = 0           # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
-    batch_size=100
+    batch_size=500
     train_val_split = .7
     hidden_dim=10
-    n_layers=5
+    n_layers=10
     lr=0.01
     # À compléter
-    n_epochs = 100
+    n_epochs = 50
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -57,9 +57,10 @@ if __name__ == '__main__':
     print('\n')
 
     # Instanciation du model
+    #mode = 'RNN', 'GRU' or 'LTSM'
     model = Trajectory2seq(hidden_dim=hidden_dim, \
         n_layers=n_layers, device=device, symb2int=dataset.symb2int, \
-        int2symb=dataset.int2symb, dict_size=dataset.dict_size, maxlen=dataset.max_len)
+        int2symb=dataset.int2symb, dict_size=dataset.dict_size, maxlen=dataset.max_len,mode='RNN')
     model = model.to(device)
 
     print("Number of parameters : ",sum(p.numel() for p in model.parameters()))
@@ -201,14 +202,13 @@ if __name__ == '__main__':
             # Extraction d'une séquence du dataset de validation
             word, seq = dataset[np.random.randint(0, len(dataset))]
 
-            #seq = seq.to(device).float()
+
             seq=torch.from_numpy(seq).float().to(device)[None,:,:]
             word = torch.IntTensor(word)
             output, hidden, attn = model(seq)  # Passage avant
             output = torch.argmax(output, dim=1).detach().cpu()[0,:].tolist()
 
             D += confusion_matrix(word.detach().cpu().tolist(), output)
-
 
             #affichage
             out_seq = [model.int2symb[i] for i in output]
@@ -218,12 +218,9 @@ if __name__ == '__main__':
             print("  --------  ")
 
         # Affichage de la matrice de confusion
-
         norm =np.sum(D,axis=1)
         norm[norm ==0] = 1
         D=D/norm[None,:]
-
         plot_confusion_matrix(D)
 
-        pass
 

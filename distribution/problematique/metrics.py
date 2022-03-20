@@ -42,6 +42,7 @@ def confusion_matrix(true, pred, ignore=[0, 2]):
     return confus_mat
 
 def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gray_r):
+
     plt.matshow(df_confusion, cmap=cmap) # imshow
     plt.title(title)
     plt.colorbar()
