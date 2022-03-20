@@ -14,18 +14,18 @@ if __name__ == '__main__':
     # ---------------- Paramètres et hyperparamètres ----------------#
     force_cpu = False           # Forcer a utiliser le cpu?
     trainning = True           # Entrainement?
-    test = False                # Test?
+    test = True                # Test?
     learning_curves = True     # Affichage des courbes d'entrainement?
     gen_test_images = True     # Génération images test?
     seed = 1                # Pour répétabilité
     n_workers = 0           # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
-    batch_size=500
+    batch_size=100
     train_val_split = .7
-    hidden_dim=20
-    n_layers=457
+    hidden_dim=10
+    n_layers=5
     lr=0.01
     # À compléter
-    n_epochs = 5
+    n_epochs = 100
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -62,6 +62,8 @@ if __name__ == '__main__':
         int2symb=dataset.int2symb, dict_size=dataset.dict_size, maxlen=dataset.max_len)
     model = model.to(device)
 
+    print("Number of parameters : ",sum(p.numel() for p in model.parameters()))
+
 
     # Initialisation des variables
     if seed is not None:
@@ -89,10 +91,10 @@ if __name__ == '__main__':
             for batch_idx, data in enumerate(dataload_train):
                 word, seq = data
 
-                #word = torch(word).to(device).long()
+
                 seq = seq.to(device).float()
                 word=torch.stack(word).T.long()
-                #word=torch.nn.functional.one_hot(word)
+
                 optimizer.zero_grad()  # Mise a zero du gradient
                 output, hidden, attn = model(seq)  # Passage avant
                 loss = criterion(output, word)
@@ -126,8 +128,6 @@ if __name__ == '__main__':
                                          running_loss_train / (batch_idx + 1),
                                          dist / len(dataload_train)), end='\r')
                 print('\n')
-
-
 
 
                 # Terminer l'affichage d'entraînement
@@ -188,15 +188,42 @@ if __name__ == '__main__':
         # À compléter
 
         # Charger les données de tests
-        # À compléter
+        model = torch.load('model.pt')
+        dataset.symb2int = model.symb2int
+        dataset.int2symb = model.int2symb
 
         # Affichage de l'attention
         # À compléter (si nécessaire)
 
+        D = np.zeros((29, 29))
         # Affichage des résultats de test
-        # À compléter
-        
+        for i in range(10):
+            # Extraction d'une séquence du dataset de validation
+            word, seq = dataset[np.random.randint(0, len(dataset))]
+
+            #seq = seq.to(device).float()
+            seq=torch.from_numpy(seq).float().to(device)[None,:,:]
+            word = torch.IntTensor(word)
+            output, hidden, attn = model(seq)  # Passage avant
+            output = torch.argmax(output, dim=1).detach().cpu()[0,:].tolist()
+
+            D += confusion_matrix(word.detach().cpu().tolist(), output)
+
+
+            #affichage
+            out_seq = [model.int2symb[i] for i in output]
+            target=[model.int2symb[i] for i in word.detach().cpu().tolist()]
+            print('target : ',''.join(target))
+            print('guessed : ',''.join(out_seq))
+            print("  --------  ")
+
         # Affichage de la matrice de confusion
-        # À compléter
+
+        norm =np.sum(D,axis=1)
+        norm[norm ==0] = 1
+        D=D/norm[None,:]
+
+        plot_confusion_matrix(D)
 
         pass
+
