@@ -23,7 +23,7 @@ class Trajectory2seq(nn.Module):
         # Definition des couches
         # Couches pour rnn
         self.decoder_embedding = nn.Embedding(self.dict_size, hidden_dim)
-        self.encoder_layer = nn.RNN(2, hidden_dim, n_layers, batch_first=True)
+        self.encoder_layer = nn.RNN(457, hidden_dim, n_layers, batch_first=True)
         self.decoder_layer = nn.RNN(hidden_dim, hidden_dim, n_layers, batch_first=True)
         # Couches pour attention
 

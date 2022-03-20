@@ -46,6 +46,6 @@ if __name__ == "__main__":
     true = [1, 3, 6, 1, 4, 2, 0, 2]
     pred = [1, 4, 5, 1, 4, 3, 2, 2]
 
-conf = confusion_matrix(true, pred)
+    conf = confusion_matrix(true, pred)
 
-print(conf)
+    print(conf)

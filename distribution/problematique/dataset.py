@@ -28,7 +28,7 @@ class HandwrittenWords(Dataset):
 
         for letter in alphabet :
             self.symb2int[letter] = len(self.symb2int)
-
+        self.dict_size=len(self.symb2int)
         self.int2symb = dict()
         self.int2symb = {v: k for k, v in self.symb2int.items()}
 
@@ -57,24 +57,28 @@ class HandwrittenWords(Dataset):
             if len(words[1][0]) !=max_size_coords:
                 print("error pad coord")
 
+        self.max_len={
+            'points':max_size_coords,
+            'en':max_length+1
+        }
+
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         word,seq=self.data[idx]
         word=[self.symb2int[letter] for letter in word]
+        #word=torch.stack(word)
         return word, seq
 
     def visualisation(self, idx):
         word, seq = self[idx]
         word=''.join([self.int2symb[entier] for entier in word])
 
-        plt.plot(seq[0],seq[1],'-')
+        plt.plot(seq[0],seq[1],'-o',label=str(idx))
         plt.title(word)
         plt.show()
-        # Visualisation des échantillons
-        # À compléter (optionel)
-        pass
+
         
 
 if __name__ == "__main__":
