@@ -19,13 +19,13 @@ if __name__ == '__main__':
     gen_test_images = True     # Génération images test?
     seed = 1                # Pour répétabilité
     n_workers = 0           # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
-    batch_size=100
+    batch_size=500
     train_val_split = .7
     hidden_dim=20
     n_layers=457
     lr=0.01
     # À compléter
-    n_epochs = 50
+    n_epochs = 1
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -89,11 +89,11 @@ if __name__ == '__main__':
 
                 #word = torch(word).to(device).long()
                 seq = seq.to(device).float()
-                word=torch.stack(word).T
+                word=torch.stack(word).T.long()
                 #word=torch.nn.functional.one_hot(word)
                 optimizer.zero_grad()  # Mise a zero du gradient
                 output, hidden, attn = model(seq)  # Passage avant
-                loss = criterion(output.view((-1, model.dict_size)), word)
+                loss = criterion(output, word)
 
                 loss.backward()  # calcul du gradient
                 optimizer.step()  # Mise a jour des poids
@@ -106,8 +106,9 @@ if __name__ == '__main__':
                 for i in range(batch_size):
                     a = target_seq_list[i]
                     b = output_list[i]
-                    M = a.index(1)
-                    dist += edit_distance(a[:M], b[:M]) / batch_size
+                    Ma = a.index(1)  # longueur mot a (sans remplissage et eos)
+                    Mb = b.index(1) if 1 in b else len(b)  # longueur mot b (sans remplissage et eos)
+                    dist += edit_distance(a[:Ma], b[:Mb]) / batch_size
 
                     # Affichage pendant l'entraînement
                 print(

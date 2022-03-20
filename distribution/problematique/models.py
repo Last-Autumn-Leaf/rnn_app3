@@ -47,7 +47,7 @@ class Trajectory2seq(nn.Module):
         max_len = self.maxlen['en']
         batch_size = hidden.shape[1] # Taille de la batch
         vec_in = torch.zeros((batch_size, 1)).to(self.device).long()                   # Vecteur d'entrée pour décodage
-        vec_out = torch.zeros((batch_size, max_len, self.dict_size)).to(self.device)   # Vecteur de sortie du décodage
+        vec_out = torch.zeros((batch_size, self.dict_size,max_len)).to(self.device)   # Vecteur de sortie du décodage
 
         # Boucle pour tous les symboles de sortie
         for i in range(max_len):
@@ -56,7 +56,7 @@ class Trajectory2seq(nn.Module):
             out, hidden = self.decoder_layer(vec_in, hidden)
             out = self.fc(out)
             vec_in = torch.argmax(out, dim=2)
-            vec_out[:, i, :] = out[:, 0, :]
+            vec_out[:, :, i] = out[:, 0, :]
 
         return vec_out, hidden, None
 
