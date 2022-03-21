@@ -20,15 +20,15 @@ if __name__ == '__main__':
     n_workers = 0          # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
     batch_size=100
     train_val_split = .7
-    hidden_dim=20
-    n_layers=5
+    hidden_dim=19
+    n_layers=7
     lr=0.01
     with_attention=True
     bidir=False
     #'RNN', 'GRU' or 'LTSM'
     RNN_MODE='GRU'
     # À compléter
-    n_epochs = 200
+    n_epochs = 100
     TreatDataAsVectors=True
     start = time.time()
 
@@ -111,7 +111,7 @@ if __name__ == '__main__':
                     b = output_list[i]
                     Ma = a.index(1)  # longueur mot a (sans remplissage et eos)
                     Mb = b.index(1) if 1 in b else len(b)  # longueur mot b (sans remplissage et eos)
-                    dist += edit_distance(a[:Ma], b[:Mb],ignoredSymbole=2) / batch_size
+                    dist += edit_distance(a[:Ma], b[:Mb],stopSign=1,padSign=2) / batch_size
 
                 loss = criterion(output, word)
                 loss.backward()  # calcul du gradient
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                     a = target_seq_list[i]
                     b = output_list[i]
                     M = a.index(1)
-                    dist += edit_distance(a[:M], b[:M],ignoredSymbole=2) / batch_size
+                    dist += edit_distance(a[:M], b[:M],stopSign=1,padSign=2) / batch_size
 
                 loss =  criterion(output, word)
                 running_loss_val += loss.item()

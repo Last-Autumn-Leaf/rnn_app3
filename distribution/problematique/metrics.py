@@ -5,18 +5,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def edit_distance(a, b,ignoredSymbole=None):
+def edit_distance(a, b,stopSign=None,padSign=None):
+
     # Calcul de la distance d'édition
-    if ignoredSymbole is not None :
-        if type(a)==str and type(b)==str :
-            a=a.replace(ignoredSymbole,'')
-            b=b.replace(ignoredSymbole,'')
-        elif type(a)==list and type(b)==list :
-            while (ignoredSymbole in a ):
-                a.remove(ignoredSymbole)
-            while (ignoredSymbole in b):
-                b.remove(ignoredSymbole)
-    # ---------------------- Laboratoire 2 - Question 1 - Début de la section à compléter ------------------
+    if stopSign is not None :
+        if type(a)==list and type(b)==list :
+            if stopSign in a :
+                aStopSignIndex=a.index(stopSign)
+                if aStopSignIndex < len(a)-1:
+                    for i in range(aStopSignIndex+1,len(a)):
+                        a[i]=padSign
+            if stopSign in b :
+                bStopSignIndex=b.index(stopSign)
+                if bStopSignIndex < len(b)-1:
+                    for i in range(bStopSignIndex+1,len(b)):
+                        b[i]=padSign
+
+
     if len(a) == 0:
         return len(b)
     if len(b) == 0:
@@ -49,9 +54,9 @@ def Attention_weight():
 
 
 if __name__ == "__main__":
-    true = 'aacd'
-    pred = 'abcd'
+    true = list('abcdd')
+    pred = list('abcde')
 
-    conf = edit_distance(true, pred,'a')
+    conf = edit_distance(true, pred,'d','#')
 
     print(conf)
