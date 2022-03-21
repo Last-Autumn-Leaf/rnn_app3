@@ -1,13 +1,12 @@
 # GRO722 problématique
 # Auteur: Jean-Samuel Lauzon et  Jonathan Vincent
 # Hivers 2022
-import torch
-from torch import nn
-import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from models import *
+
 from dataset import *
 from metrics import *
+from models import *
+import time
 
 if __name__ == '__main__':
 
@@ -18,7 +17,7 @@ if __name__ == '__main__':
     learning_curves = True     # Affichage des courbes d'entrainement?
     gen_test_images = True     # Génération images test?
     seed = 1                # Pour répétabilité
-    n_workers = 0           # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
+    n_workers = 0          # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
     batch_size=100
     train_val_split = .7
     hidden_dim=20
@@ -29,8 +28,9 @@ if __name__ == '__main__':
     #'RNN', 'GRU' or 'LTSM'
     RNN_MODE='GRU'
     # À compléter
-    n_epochs = 100
+    n_epochs = 200
     TreatDataAsVectors=True
+    start = time.time()
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -63,9 +63,9 @@ if __name__ == '__main__':
 
     # Instanciation du model
     #mode = 'RNN', 'GRU' or 'LTSM'
-    model = Trajectory2seq(hidden_dim=hidden_dim, \
-        n_layers=n_layers, device=device, symb2int=dataset.symb2int, \
-        int2symb=dataset.int2symb, dict_size=dataset.dict_size,
+    model = Trajectory2seq(hidden_dim=hidden_dim,
+                           n_layers=n_layers, device=device, symb2int=dataset.symb2int,
+                           int2symb=dataset.int2symb, dict_size=dataset.dict_size,
         maxlen=dataset.max_len,mode=RNN_MODE,attn=with_attention,bidirectional=bidir)
     model = model.to(device)
 
@@ -119,12 +119,12 @@ if __name__ == '__main__':
                 running_loss_train += loss.item()
 
                 # Affichage pendant l'entraînement
-                '''print(
+                print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, batch_idx * batch_size, len(dataload_train.dataset),
                                             100. * batch_idx * batch_size / len(dataload_train.dataset),
                                             running_loss_train / (batch_idx + 1),
-                                            dist / ((batch_idx+1)* len(dataload_train))), end='\r')'''
+                                            dist / ((batch_idx+1)* len(dataload_train))), end='\r')
             print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, (batch_idx + 1) * batch_size, len(dataload_train.dataset),
@@ -184,6 +184,8 @@ if __name__ == '__main__':
                 plt.draw()
                 plt.pause(0.01)
 
+        end = time.time()
+        print('Temps entrainement : ',end - start)
         if learning_curves:
                 plt.show()
                 plt.close('all')
@@ -230,8 +232,9 @@ if __name__ == '__main__':
         D=D/norm[None,:]
         plot_confusion_matrix(D)
         plt.figure()
-        for i in range(len(randintList)):
-            dataset.visualisation(randintList[i])
+        if gen_test_images:
+            for i in range(len(randintList)):
+                dataset.visualisation(randintList[i])
         plt.show()
 
 
