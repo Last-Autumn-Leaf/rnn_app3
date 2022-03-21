@@ -5,9 +5,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def edit_distance(a, b):
+def edit_distance(a, b,ignoredSymbole=None):
     # Calcul de la distance d'édition
-
+    if ignoredSymbole is not None :
+        if type(a)==str and type(b)==str :
+            a=a.replace(ignoredSymbole,'')
+            b=b.replace(ignoredSymbole,'')
+        elif type(a)==list and type(b)==list :
+            while (ignoredSymbole in a ):
+                a.remove(ignoredSymbole)
+            while (ignoredSymbole in b):
+                b.remove(ignoredSymbole)
     # ---------------------- Laboratoire 2 - Question 1 - Début de la section à compléter ------------------
     if len(a) == 0:
         return len(b)
@@ -41,9 +49,9 @@ def Attention_weight():
 
 
 if __name__ == "__main__":
-    true = [1, 3, 6, 1, 4, 2, 0, 2]
-    pred = [1, 4, 5, 1, 4, 3, 2, 2]
+    true = 'aacd'
+    pred = 'abcd'
 
-    conf = confusion_matrix(true, pred)
+    conf = edit_distance(true, pred,'a')
 
     print(conf)

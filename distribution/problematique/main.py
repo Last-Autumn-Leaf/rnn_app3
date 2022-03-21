@@ -111,7 +111,7 @@ if __name__ == '__main__':
                     b = output_list[i]
                     Ma = a.index(1)  # longueur mot a (sans remplissage et eos)
                     Mb = b.index(1) if 1 in b else len(b)  # longueur mot b (sans remplissage et eos)
-                    dist += edit_distance(a[:Ma], b[:Mb]) / batch_size
+                    dist += edit_distance(a[:Ma], b[:Mb],ignoredSymbole=2) / batch_size
 
                 loss = criterion(output, word)
                 loss.backward()  # calcul du gradient
@@ -119,12 +119,13 @@ if __name__ == '__main__':
                 running_loss_train += loss.item()
 
                 # Affichage pendant l'entraînement
-                print(
+                '''print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, batch_idx * batch_size, len(dataload_train.dataset),
                                             100. * batch_idx * batch_size / len(dataload_train.dataset),
                                             running_loss_train / (batch_idx + 1),
                                             dist / ((batch_idx+1)* len(dataload_train))), end='\r')
+                print('\n')'''
             print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, (batch_idx + 1) * batch_size, len(dataload_train.dataset),
@@ -155,7 +156,7 @@ if __name__ == '__main__':
                     a = target_seq_list[i]
                     b = output_list[i]
                     M = a.index(1)
-                    dist += edit_distance(a[:M], b[:M]) / batch_size
+                    dist += edit_distance(a[:M], b[:M],ignoredSymbole=2) / batch_size
 
                 loss =  criterion(output, word)
                 running_loss_val += loss.item()
