@@ -35,7 +35,7 @@ class Trajectory2seq(nn.Module):
         self.encoder_layer =mode_dict[mode](input_size=2,hidden_size= hidden_dim,
                             num_layers=n_layers, batch_first=True,bidirectional=bidirectional)
         self.decoder_layer = mode_dict[mode](input_size=hidden_dim,hidden_size= hidden_dim,
-                            num_layers=n_layers, batch_first=True,bidirectional=bidirectional)
+                            num_layers=n_layers, batch_first=True)
 
         # Couches pour attention
         self.att_combine = nn.Linear(2*hidden_dim, hidden_dim)

@@ -21,17 +21,16 @@ if __name__ == '__main__':
     n_workers = 0           # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
     batch_size=500
     train_val_split = .7
-    hidden_dim=10
-    n_layers=5
-    lr=0.01
-    with_attention=False
+    hidden_dim=15
+    n_layers=1
+    lr=0.05
+    with_attention=True
     bidir=False
     #'RNN', 'GRU' or 'LTSM'
-    RNN_MODE='RNN'
+    RNN_MODE='GRU'
     # À compléter
-    n_epochs = 10
-    penalise_dist=False
-    TreatDataAsVectors=False
+    n_epochs = 200
+    TreatDataAsVectors=True
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -98,19 +97,13 @@ if __name__ == '__main__':
             dist = 0
             for batch_idx, data in enumerate(dataload_train):
                 word, seq = data
-
-
                 seq = seq.to(device).float()
                 word=torch.stack(word).T.long()
 
                 optimizer.zero_grad()  # Mise a zero du gradient
                 output, hidden, attn = model(seq)  # Passage avant
-
-
-
-
                 # calcul de la distance d'édition
-                output_list = torch.argmax(output, dim=-1).detach().cpu().tolist()
+                output_list = torch.argmax(output, dim=1).detach().cpu().tolist()
                 target_seq_list = word.cpu().tolist()
                 M = len(output_list)
                 for i in range(batch_size):
@@ -120,7 +113,7 @@ if __name__ == '__main__':
                     Mb = b.index(1) if 1 in b else len(b)  # longueur mot b (sans remplissage et eos)
                     dist += edit_distance(a[:Ma], b[:Mb]) / batch_size
 
-                loss = (dist if penalise_dist else 1)*criterion(output, word)
+                loss = criterion(output, word)
                 loss.backward()  # calcul du gradient
                 optimizer.step()  # Mise a jour des poids
                 running_loss_train += loss.item()
@@ -131,7 +124,7 @@ if __name__ == '__main__':
                         epoch, n_epochs, batch_idx * batch_size, len(dataload_train.dataset),
                                             100. * batch_idx * batch_size / len(dataload_train.dataset),
                                             running_loss_train / (batch_idx + 1),
-                                            dist / len(dataload_train)), end='\r')
+                                            dist / ((batch_idx+1)* len(dataload_train))), end='\r')
                 print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, (batch_idx + 1) * batch_size, len(dataload_train.dataset),
@@ -164,10 +157,10 @@ if __name__ == '__main__':
                     M = a.index(1)
                     dist += edit_distance(a[:M], b[:M]) / batch_size
 
-                loss = (dist if penalise_dist else 1) * criterion(output, word)
+                loss =  criterion(output, word)
                 running_loss_val += loss.item()
                 # calcul de la distance d'édition
-                output_list = torch.argmax(output, dim=-1).detach().cpu().tolist()
+                output_list = torch.argmax(output, dim=1).detach().cpu().tolist()
                 target_seq_list = word.cpu().tolist()
 
             # Ajouter les loss aux listes
