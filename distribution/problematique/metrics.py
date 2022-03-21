@@ -47,7 +47,6 @@ def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gr
     plt.title(title)
     plt.colorbar()
 
-    plt.show()
 
 if __name__ == "__main__":
     true = [1, 3, 6, 1, 4, 2, 0, 2]

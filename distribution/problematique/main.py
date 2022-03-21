@@ -22,10 +22,16 @@ if __name__ == '__main__':
     batch_size=500
     train_val_split = .7
     hidden_dim=10
-    n_layers=10
+    n_layers=5
     lr=0.01
+    with_attention=False
+    bidir=False
+    #'RNN', 'GRU' or 'LTSM'
+    RNN_MODE='RNN'
     # À compléter
-    n_epochs = 50
+    n_epochs = 10
+    penalise_dist=False
+    TreatDataAsVectors=False
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -38,7 +44,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() and not force_cpu else "cpu")
 
     # Instanciation de l'ensemble de données
-    dataset=HandwrittenWords('data_trainval.p')
+    dataset=HandwrittenWords('data_trainval.p',normalisation=True,asVector=TreatDataAsVectors)
 
 
     
@@ -60,7 +66,8 @@ if __name__ == '__main__':
     #mode = 'RNN', 'GRU' or 'LTSM'
     model = Trajectory2seq(hidden_dim=hidden_dim, \
         n_layers=n_layers, device=device, symb2int=dataset.symb2int, \
-        int2symb=dataset.int2symb, dict_size=dataset.dict_size, maxlen=dataset.max_len,mode='RNN')
+        int2symb=dataset.int2symb, dict_size=dataset.dict_size,
+        maxlen=dataset.max_len,mode=RNN_MODE,attn=with_attention,bidirectional=bidir)
     model = model.to(device)
 
     print("Number of parameters : ",sum(p.numel() for p in model.parameters()))
@@ -98,11 +105,9 @@ if __name__ == '__main__':
 
                 optimizer.zero_grad()  # Mise a zero du gradient
                 output, hidden, attn = model(seq)  # Passage avant
-                loss = criterion(output, word)
 
-                loss.backward()  # calcul du gradient
-                optimizer.step()  # Mise a jour des poids
-                running_loss_train += loss.item()
+
+
 
                 # calcul de la distance d'édition
                 output_list = torch.argmax(output, dim=-1).detach().cpu().tolist()
@@ -114,6 +119,11 @@ if __name__ == '__main__':
                     Ma = a.index(1)  # longueur mot a (sans remplissage et eos)
                     Mb = b.index(1) if 1 in b else len(b)  # longueur mot b (sans remplissage et eos)
                     dist += edit_distance(a[:Ma], b[:Mb]) / batch_size
+
+                loss = (dist if penalise_dist else 1)*criterion(output, word)
+                loss.backward()  # calcul du gradient
+                optimizer.step()  # Mise a jour des poids
+                running_loss_train += loss.item()
 
                     # Affichage pendant l'entraînement
                 print(
@@ -146,18 +156,19 @@ if __name__ == '__main__':
                 seq = seq.to(device).float()
                 word = torch.stack(word).T
                 output, hidden, attn = model(seq)  # Passage avant
-                loss = criterion(output, word)
 
-                running_loss_val += loss.item()
-                # calcul de la distance d'édition
-                output_list = torch.argmax(output, dim=-1).detach().cpu().tolist()
-                target_seq_list = word.cpu().tolist()
                 M = len(output_list)
                 for i in range(batch_size):
                     a = target_seq_list[i]
                     b = output_list[i]
                     M = a.index(1)
                     dist += edit_distance(a[:M], b[:M]) / batch_size
+
+                loss = (dist if penalise_dist else 1) * criterion(output, word)
+                running_loss_val += loss.item()
+                # calcul de la distance d'édition
+                output_list = torch.argmax(output, dim=-1).detach().cpu().tolist()
+                target_seq_list = word.cpu().tolist()
 
             # Ajouter les loss aux listes
             val_loss.append(running_loss_val / len(dataload_val))
@@ -197,10 +208,13 @@ if __name__ == '__main__':
         # À compléter (si nécessaire)
 
         D = np.zeros((29, 29))
+        randintList=[]
+        numberOfTest=10
         # Affichage des résultats de test
-        for i in range(10):
+        for i in range(numberOfTest):
             # Extraction d'une séquence du dataset de validation
-            word, seq = dataset[np.random.randint(0, len(dataset))]
+            randintList.append(np.random.randint(0, len(dataset)))
+            word, seq = dataset[randintList[i]]
 
 
             seq=torch.from_numpy(seq).float().to(device)[None,:,:]
@@ -222,5 +236,9 @@ if __name__ == '__main__':
         norm[norm ==0] = 1
         D=D/norm[None,:]
         plot_confusion_matrix(D)
+        plt.figure()
+        for i in range(len(randintList)):
+            dataset.visualisation(randintList[i])
+        plt.show()
 
 

@@ -14,7 +14,8 @@ mode_dict={
 }
 
 class Trajectory2seq(nn.Module):
-    def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen, attn=False,mode='RNN'):
+    def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen,
+            attn=False,mode='RNN',bidirectional=False,batchNorm=False):
         super(Trajectory2seq, self).__init__()
         # Definition des parametres
         self.hidden_dim = hidden_dim
@@ -26,21 +27,28 @@ class Trajectory2seq(nn.Module):
         self.maxlen = maxlen
         self.attn = attn
         self.mode=mode
+        self.batchNorm=batchNorm
         # Definition des couches
         # Couches pour rnn
         self.decoder_embedding = nn.Embedding(self.dict_size, hidden_dim)
 
-        self.encoder_layer =mode_dict[mode](input_size=457,hidden_size= hidden_dim, num_layers=n_layers, batch_first=True)
-        self.decoder_layer = mode_dict[mode](input_size=hidden_dim,hidden_size= hidden_dim, num_layers=n_layers, batch_first=True)
+        self.encoder_layer =mode_dict[mode](input_size=2,hidden_size= hidden_dim,
+                            num_layers=n_layers, batch_first=True,bidirectional=bidirectional)
+        self.decoder_layer = mode_dict[mode](input_size=hidden_dim,hidden_size= hidden_dim,
+                            num_layers=n_layers, batch_first=True,bidirectional=bidirectional)
 
         # Couches pour attention
         self.att_combine = nn.Linear(2*hidden_dim, hidden_dim)
         self.hidden2query = nn.Linear(hidden_dim, hidden_dim)
         self.soft_max = nn.Softmax()
-        self.cos = nn.CosineSimilarity(dim=1, eps=1e-6)
+        self.cos = nn.CosineSimilarity(dim=2, eps=1e-6)
 
+
+        # BN
+        if self.batchNorm :
+            self.BN=nn.BatchNorm1d(1)
         # Couche dense pour la sortie
-        self.fc = nn.Linear(hidden_dim, self.dict_size)
+        self.fc = nn.Linear(hidden_dim if not bidirectional else 2*hidden_dim, self.dict_size)
         self.to(device)
 
     def encoder(self, x):
@@ -60,7 +68,7 @@ class Trajectory2seq(nn.Module):
         # Attention
         simil = self.cos(values, query)
         attention_weights = self.soft_max(simil)
-        attention_output = values * attention_weights[:, :, None]
+        attention_output = values * attention_weights[:, :,None]
         attention_output = torch.sum(attention_output, dim=1)
         return attention_output, attention_weights
 
@@ -73,7 +81,7 @@ class Trajectory2seq(nn.Module):
         vec_out = torch.zeros((batch_size, self.dict_size, max_len)).to(self.device)  # Vecteur de sortie du décodage
         attn_w = None
         if self.attn:
-            attn_w = torch.zeros((batch_size, self.max_len['fr'], self.max_len['en'])).to(self.device)  # Poids d'attention
+            attn_w = torch.zeros((batch_size,  max_len)).to(self.device)  # Poids d'attention
 
         # Boucle pour tous les symboles de sortie
         for i in range(max_len):
@@ -89,8 +97,11 @@ class Trajectory2seq(nn.Module):
             if self.attn:
                 attn_out, attn_w = self.attentionModule(out, encoder_outs)
                 out = torch.cat((out[:, 0, :], attn_out), 1)
-                out = self.att_combine(out)
+                out = self.att_combine(out)[:,None,:]
 
+            # BN
+            if self.batchNorm:
+                out=self.BN(out)
             out = self.fc(out)
             vec_in = torch.argmax(out, dim=2)
             vec_out[:, :, i] = out[:, 0, :]
