@@ -3,32 +3,21 @@
 # Hivers 2022
 import numpy as np
 import matplotlib.pyplot as plt
-def edit_distance(token1,token2):
-    distances = np.zeros((len(token1) + 1, len(token2) + 1))
 
-    for t1 in range(len(token1) + 1):
-        distances[t1][0] = t1
 
-    for t2 in range(len(token2) + 1):
-        distances[0][t2] = t2
+def edit_distance(a, b):
+    # Calcul de la distance d'édition
 
-    for t1 in range(1, len(token1) + 1):
-        for t2 in range(1, len(token2) + 1):
-            if (token1[t1 - 1] == token2[t2 - 1]):
-                distances[t1][t2] = distances[t1 - 1][t2 - 1]
-            else:
-                a = distances[t1][t2 - 1]
-                b = distances[t1 - 1][t2]
-                c = distances[t1 - 1][t2 - 1]
+    # ---------------------- Laboratoire 2 - Question 1 - Début de la section à compléter ------------------
+    if len(a) == 0:
+        return len(b)
+    if len(b) == 0:
+        return len(a)
+    if a[0] == b[0]:
+        return edit_distance(a[1:], b[1:])
 
-                if (a <= b and a <= c):
-                    distances[t1][t2] = a + 1
-                elif (b <= a and b <= c):
-                    distances[t1][t2] = b + 1
-                else:
-                    distances[t1][t2] = c + 1
-
-    return distances[len(token1)][len(token2)]
+    else:
+        return 1 + min(edit_distance(a[1:], b), edit_distance(a, b[1:]), edit_distance(a[1:], b[1:]))
 
 
 def confusion_matrix(true, pred, ignore=[0, 2]):
