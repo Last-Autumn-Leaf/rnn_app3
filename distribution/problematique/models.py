@@ -62,7 +62,7 @@ class Trajectory2seq(nn.Module):
         vec_in = torch.zeros((batch_size, 1)).to(self.device).long()  # Vecteur d'entrée pour décodage
         vec_out = torch.zeros((batch_size, self.dict_size, max_len)).to(self.device)  # Vecteur de sortie du décodage
         attn_w = None
-        if attn:
+        if self.attn:
             attn_w = torch.zeros((batch_size, self.max_len['fr'], self.max_len['en'])).to(self.device)  # Poids d'attention
 
         # Boucle pour tous les symboles de sortie
@@ -71,7 +71,7 @@ class Trajectory2seq(nn.Module):
             vec_in = self.decoder_embedding(vec_in)
             out, hidden = self.decoder_layer(vec_in, hidden)
 
-            if attn:
+            if self.attn:
                 attn_out, attn_w = self.attentionModule(out, encoder_outs)
                 out = torch.cat((out[:, 0, :], attn_out), 1)
                 out = self.att_combine(out)
