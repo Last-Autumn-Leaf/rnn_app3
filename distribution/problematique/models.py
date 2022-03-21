@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 class Trajectory2seq(nn.Module):
-    def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen):
+    def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen, attn=False):
         super(Trajectory2seq, self).__init__()
         # Definition des parametres
         self.hidden_dim = hidden_dim
@@ -19,6 +19,7 @@ class Trajectory2seq(nn.Module):
         self.int2symb = int2symb
         self.dict_size = dict_size
         self.maxlen = maxlen
+        self.attn = attn
 
         # Definition des couches
         # Couches pour rnn
@@ -53,7 +54,7 @@ class Trajectory2seq(nn.Module):
         attention_output = torch.sum(attention_output, dim=1)
         return attention_output, attention_weights
 
-    def decoder(self, encoder_outs, hidden, attn=False):
+    def decoder(self, encoder_outs, hidden):
         # Decodeur
         # Initialisation des variables
         max_len = self.maxlen['en']
