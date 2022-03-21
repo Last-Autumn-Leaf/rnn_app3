@@ -25,7 +25,7 @@ if __name__ == '__main__':
     n_layers=457
     lr=0.01
     # À compléter
-    n_epochs = 1
+    n_epochs = 5
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
 
@@ -74,7 +74,9 @@ if __name__ == '__main__':
         if learning_curves:
             train_dist = []  # Historique des distances
             train_loss = []  # Historique des coûts
-            fig, ax = plt.subplots(1)  # Initialisation figure
+            val_dist = []  # Historique des distances
+            val_loss = []  # Historique des coûts
+            fig, ax = plt.subplots(2)  # Initialisation figure
 
         # Fonction de coût et optimizateur
         criterion = nn.CrossEntropyLoss(ignore_index=2)  # ignorer les symboles <pad>
@@ -130,27 +132,50 @@ if __name__ == '__main__':
 
                 # Terminer l'affichage d'entraînement
 
-
-            
-            # Validation
-            # À compléter
-
             # Ajouter les loss aux listes
             train_loss.append(running_loss_train / len(dataload_train))
             train_dist.append(dist / len(dataload_train))
 
+            # Validation
+            running_loss_val = 0
+            dist = 0
+            for batch_idx, data in enumerate(dataload_val):
+
+                word, seq = data
+                seq = seq.to(device).float()
+                word = torch.stack(word).T
+                output, hidden, attn = model(seq)  # Passage avant
+                loss = criterion(output, word)
+
+                running_loss_val += loss.item()
+                # calcul de la distance d'édition
+                output_list = torch.argmax(output, dim=-1).detach().cpu().tolist()
+                target_seq_list = word.cpu().tolist()
+                M = len(output_list)
+                for i in range(batch_size):
+                    a = target_seq_list[i]
+                    b = output_list[i]
+                    M = a.index(1)
+                    dist += edit_distance(a[:M], b[:M]) / batch_size
+
+            # Ajouter les loss aux listes
+            val_loss.append(running_loss_val / len(dataload_val))
+            val_dist.append(dist / len(dataload_val))
+
             # Enregistrer les poids
-            torch.save(model,'model.pt')
+            torch.save(model, 'model.pt')
 
 
             # Affichage
             if learning_curves:
-                train_loss.append(running_loss_train / len(dataload_train))
-                train_dist.append(dist / len(dataload_train))
-                ax.cla()
-                ax.plot(train_loss, label='training loss')
-                ax.plot(train_dist, label='training distance')
-                ax.legend()
+                ax[0].cla()
+                ax[1].cla()
+                ax[0].plot(train_loss, label='training loss')
+                ax[0].plot(val_loss, label='validation loss')
+                ax[1].plot(train_dist, label='training distance')
+                ax[1].plot(val_dist, label='validation distance')
+                ax[0].legend()
+                ax[1].legend()
                 plt.draw()
                 plt.pause(0.01)
 
