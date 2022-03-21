@@ -33,7 +33,6 @@ class HandwrittenWords(Dataset):
         self.int2symb = {v: k for k, v in self.symb2int.items()}
         self.asVector=asVector
 
-        
         # Ajout du padding aux séquences
         max_length = 5
         max_size_coords=0

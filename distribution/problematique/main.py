@@ -19,17 +19,17 @@ if __name__ == '__main__':
     gen_test_images = True     # Génération images test?
     seed = 1                # Pour répétabilité
     n_workers = 0           # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
-    batch_size=500
+    batch_size=100
     train_val_split = .7
-    hidden_dim=15
-    n_layers=1
-    lr=0.05
+    hidden_dim=20
+    n_layers=5
+    lr=0.01
     with_attention=True
     bidir=False
     #'RNN', 'GRU' or 'LTSM'
     RNN_MODE='GRU'
     # À compléter
-    n_epochs = 200
+    n_epochs = 100
     TreatDataAsVectors=True
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() and not force_cpu else "cpu")
 
     # Instanciation de l'ensemble de données
-    dataset=HandwrittenWords('data_trainval.p',normalisation=True,asVector=TreatDataAsVectors)
+    dataset=HandwrittenWords('data_trainval.p',normalisation=False,asVector=TreatDataAsVectors)
 
 
     
@@ -118,20 +118,20 @@ if __name__ == '__main__':
                 optimizer.step()  # Mise a jour des poids
                 running_loss_train += loss.item()
 
-                    # Affichage pendant l'entraînement
-                print(
+                # Affichage pendant l'entraînement
+                '''print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, batch_idx * batch_size, len(dataload_train.dataset),
                                             100. * batch_idx * batch_size / len(dataload_train.dataset),
                                             running_loss_train / (batch_idx + 1),
-                                            dist / ((batch_idx+1)* len(dataload_train))), end='\r')
-                print(
+                                            dist / ((batch_idx+1)* len(dataload_train))), end='\r')'''
+            print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, (batch_idx + 1) * batch_size, len(dataload_train.dataset),
                                          100. * (batch_idx + 1) * batch_size / len(dataload_train.dataset),
                                          running_loss_train / (batch_idx + 1),
                                          dist / len(dataload_train)), end='\r')
-                print('\n')
+            print('\n')
 
 
                 # Terminer l'affichage d'entraînement
@@ -202,7 +202,7 @@ if __name__ == '__main__':
 
         D = np.zeros((29, 29))
         randintList=[]
-        numberOfTest=10
+        numberOfTest=100
         # Affichage des résultats de test
         for i in range(numberOfTest):
             # Extraction d'une séquence du dataset de validation

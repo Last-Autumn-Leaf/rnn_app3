@@ -40,7 +40,7 @@ class Trajectory2seq(nn.Module):
         # Couches pour attention
         self.att_combine = nn.Linear(2*hidden_dim, hidden_dim)
         self.hidden2query = nn.Linear(hidden_dim, hidden_dim)
-        self.soft_max = nn.Softmax()
+        self.soft_max = nn.Softmax(dim=1)
         self.cos = nn.CosineSimilarity(dim=2, eps=1e-6)
 
 
