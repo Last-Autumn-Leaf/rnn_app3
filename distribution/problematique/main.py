@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     # ---------------- Paramètres et hyperparamètres ----------------#
     force_cpu = False           # Forcer a utiliser le cpu?
-    trainning = True           # Entrainement?
+    trainning = False           # Entrainement?
     test = True                # Test?
     learning_curves = True     # Affichage des courbes d'entrainement?
     gen_test_images = True     # Génération images test?
@@ -20,8 +20,8 @@ if __name__ == '__main__':
     n_workers = 0          # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
     batch_size=100
     train_val_split = .7
-    hidden_dim=19
-    n_layers=7
+    hidden_dim=23
+    n_layers=5
     lr=0.01
     with_attention=True
     bidir=False
@@ -30,6 +30,7 @@ if __name__ == '__main__':
     # À compléter
     n_epochs = 100
     TreatDataAsVectors=True
+    presentation = False
     start = time.time()
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
@@ -42,34 +43,36 @@ if __name__ == '__main__':
     # Choix du device
     device = torch.device("cuda" if torch.cuda.is_available() and not force_cpu else "cpu")
 
-    # Instanciation de l'ensemble de données
-    dataset=HandwrittenWords('data_trainval.p',normalisation=False,asVector=TreatDataAsVectors)
+    if not presentation  :
+        # Instanciation de l'ensemble de données
+        dataset=HandwrittenWords('data_trainval.p',normalisation=False,asVector=TreatDataAsVectors)
+        # Séparation de l'ensemble de données (entraînement et validation)
+        n_train_samp = int(len(dataset) * train_val_split)
+        n_val_samp = len(dataset) - n_train_samp
+        dataset_train, dataset_val = torch.utils.data.random_split(dataset, [n_train_samp, n_val_samp])
+
+        # Instanciation des dataloaders
+        dataload_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=n_workers)
+        dataload_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False, num_workers=n_workers)
+
+        print('Number of epochs : ', n_epochs)
+        print('Training data : ', len(dataset_train))
+        print('Validation data : ', len(dataset_val))
+        print('\n')
+
+        # Instanciation du model
+        # mode = 'RNN', 'GRU' or 'LTSM'
+        model = Trajectory2seq(hidden_dim=hidden_dim,
+                               n_layers=n_layers, device=device, symb2int=dataset.symb2int,
+                               int2symb=dataset.int2symb, dict_size=dataset.dict_size,
+                               maxlen=dataset.max_len, mode=RNN_MODE, attn=with_attention, bidirectional=bidir)
+        model = model.to(device)
+
+        print("Number of parameters : ", sum(p.numel() for p in model.parameters()))
 
 
-    
-    # Séparation de l'ensemble de données (entraînement et validation)
-    n_train_samp = int(len(dataset) * train_val_split)
-    n_val_samp = len(dataset) - n_train_samp
-    dataset_train, dataset_val = torch.utils.data.random_split(dataset, [n_train_samp, n_val_samp])
-
-    # Instanciation des dataloaders
-    dataload_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=n_workers)
-    dataload_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False, num_workers=n_workers)
-
-    print('Number of epochs : ', n_epochs)
-    print('Training data : ', len(dataset_train))
-    print('Validation data : ', len(dataset_val))
-    print('\n')
-
-    # Instanciation du model
-    #mode = 'RNN', 'GRU' or 'LTSM'
-    model = Trajectory2seq(hidden_dim=hidden_dim,
-                           n_layers=n_layers, device=device, symb2int=dataset.symb2int,
-                           int2symb=dataset.int2symb, dict_size=dataset.dict_size,
-        maxlen=dataset.max_len,mode=RNN_MODE,attn=with_attention,bidirectional=bidir)
-    model = model.to(device)
-
-    print("Number of parameters : ",sum(p.numel() for p in model.parameters()))
+    else :
+        trainning=False
 
 
     # Initialisation des variables
@@ -90,6 +93,7 @@ if __name__ == '__main__':
         # Fonction de coût et optimizateur
         criterion = nn.CrossEntropyLoss(ignore_index=2)  # ignorer les symboles <pad>
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        bestDist=6
 
         for epoch in range(1, n_epochs + 1):
             # Entraînement
@@ -168,8 +172,16 @@ if __name__ == '__main__':
             val_loss.append(running_loss_val / len(dataload_val))
             val_dist.append(dist / len(dataload_val))
 
-            # Enregistrer les poids
-            torch.save(model, 'model.pt')
+
+            #condition to save the model with the best distance
+            if bestDist <dist / len(dataload_val) :
+                # Enregistrer les poids
+                print('saving model with a validation distance of ',dist / len(dataload_val) )
+                print('')
+                torch.save(model, 'model.pt')
+                bestDist=dist / len(dataload_val)
+
+
 
 
             # Affichage
@@ -193,15 +205,21 @@ if __name__ == '__main__':
 
     if test:
         # Évaluation
-        # À compléter
+
+        if presentation :
+            dataset_test_file_name='data_test_no_labels.p'
+            dataset = HandwrittenWords(dataset_test_file_name, normalisation=False, asVector=TreatDataAsVectors)
+
+
 
         # Charger les données de tests
         model = torch.load('model.pt')
         dataset.symb2int = model.symb2int
         dataset.int2symb = model.int2symb
+        model.maxlen=dataset.max_len
 
         # Affichage de l'attention
-        # À compléter (si nécessaire)
+        Attention_data=[]
 
         D = np.zeros((29, 29))
         randintList=[]
@@ -209,8 +227,8 @@ if __name__ == '__main__':
         # Affichage des résultats de test
         for i in range(numberOfTest):
             # Extraction d'une séquence du dataset de validation
-            randintList.append(np.random.randint(0, len(dataset)))
-            word, seq = dataset[randintList[i]]
+            randomIndex=np.random.randint(0, len(dataset))
+            word, seq = dataset[randomIndex]
 
 
             seq=torch.from_numpy(seq).float().to(device)[None,:,:]
@@ -223,19 +241,23 @@ if __name__ == '__main__':
             #affichage
             out_seq = [model.int2symb[i] for i in output]
             target=[model.int2symb[i] for i in word.detach().cpu().tolist()]
-            print('target : ',''.join(target))
-            print('guessed : ',''.join(out_seq))
-            print("  --------  ")
+            #print('target : ',''.join(target))
+            #print('guessed : ',''.join(out_seq))
+            #print("  --------  ")
+
+            #stockage de l'attention des lettres
+            Attention_data.append({'guessed':clean_guess_word(out_seq,'$','@'),
+                               'index':randomIndex,
+                               'attentionW':attn.detach().cpu()[0]})
 
         # Affichage de la matrice de confusion
         norm =np.sum(D,axis=1)
         norm[norm ==0] = 1
         D=D/norm[None,:]
         plot_confusion_matrix(D)
-        plt.figure()
-        if gen_test_images:
-            for i in range(len(randintList)):
-                dataset.visualisation(randintList[i])
         plt.show()
 
-
+        if gen_test_images:
+            for i in range(len(Attention_data)):
+                dataset.visualisation_attention(Attention_data[i])
+                plt.show()

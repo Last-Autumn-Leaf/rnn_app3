@@ -99,6 +99,26 @@ class HandwrittenWords(Dataset):
         plt.title(word)
         plt.show()
 
+    def visualisation_attention(self,Attention_data):
+        idx=Attention_data['index']
+        word, seq = self[idx]
+        word = ''.join([self.int2symb[entier] for entier in word])
+        if self.asVector:
+            for i in range(len(seq)):
+                seq[i] += seq[i - 1] if i != 0 else np.zeros((2))
+        plt.figure(figsize=(9, 6))
+        ax0=plt.subplot(3,1 ,3)
+        ax0.plot(seq[:, 0], seq[:, 1], '-o',markersize=5)
+        ax_=[0]*7
+
+        for i in range (1,1+len(Attention_data['attentionW'])):
+            ax_[i]=plt.subplot(5, 2, i)
+            plt.scatter(seq[:, 0], seq[:, 1],5,Attention_data['attentionW'][i-1],
+                label=Attention_data['guessed'][i-1],cmap='binary')
+            plt.legend()
+        plt.suptitle('target:'+word+', guessed: '+''.join(Attention_data['guessed']))
+
+
         
 
 if __name__ == "__main__":

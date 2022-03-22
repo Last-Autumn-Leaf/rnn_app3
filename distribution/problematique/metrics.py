@@ -5,21 +5,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def clean_guess_word(a,stopSign,padSign):
+    if stopSign in a:
+        aStopSignIndex = a.index(stopSign)
+        if aStopSignIndex < len(a) - 1:
+            for i in range(aStopSignIndex + 1, len(a)):
+                a[i] = padSign
+    return a
+
+
 def edit_distance(a, b,stopSign=None,padSign=None):
+
 
     # Calcul de la distance d'édition
     if stopSign is not None :
         if type(a)==list and type(b)==list :
-            if stopSign in a :
-                aStopSignIndex=a.index(stopSign)
-                if aStopSignIndex < len(a)-1:
-                    for i in range(aStopSignIndex+1,len(a)):
-                        a[i]=padSign
-            if stopSign in b :
-                bStopSignIndex=b.index(stopSign)
-                if bStopSignIndex < len(b)-1:
-                    for i in range(bStopSignIndex+1,len(b)):
-                        b[i]=padSign
+            a=clean_guess_word(a,stopSign,padSign)
+            b=clean_guess_word(b,stopSign,padSign)
 
 
     if len(a) == 0:

@@ -35,11 +35,11 @@ class Trajectory2seq(nn.Module):
         self.encoder_layer =mode_dict[mode](input_size=2,hidden_size= hidden_dim,
                             num_layers=n_layers, batch_first=True,bidirectional=bidirectional)
         self.decoder_layer = mode_dict[mode](input_size=hidden_dim,hidden_size= hidden_dim,
-                            num_layers=n_layers, batch_first=True)
+                            num_layers=2*n_layers if bidirectional else n_layers, batch_first=True)
 
         # Couches pour attention
-        self.att_combine = nn.Linear(2*hidden_dim, hidden_dim)
-        self.hidden2query = nn.Linear(hidden_dim, hidden_dim)
+        self.att_combine = nn.Linear(3*hidden_dim if bidirectional else  2*hidden_dim, hidden_dim)
+        self.hidden2query = nn.Linear(hidden_dim, 2*hidden_dim if bidirectional else hidden_dim)
         self.soft_max = nn.Softmax(dim=1)
         self.cos = nn.CosineSimilarity(dim=2, eps=1e-6)
 
@@ -48,7 +48,7 @@ class Trajectory2seq(nn.Module):
         if self.batchNorm :
             self.BN=nn.BatchNorm1d(1)
         # Couche dense pour la sortie
-        self.fc = nn.Linear(hidden_dim if not bidirectional else 2*hidden_dim, self.dict_size)
+        self.fc = nn.Linear(hidden_dim , self.dict_size)
         self.to(device)
 
     def encoder(self, x):
@@ -81,7 +81,8 @@ class Trajectory2seq(nn.Module):
         vec_out = torch.zeros((batch_size, self.dict_size, max_len)).to(self.device)  # Vecteur de sortie du décodage
         attn_w = None
         if self.attn:
-            attn_w = torch.zeros((batch_size,  max_len)).to(self.device)  # Poids d'attention
+            attn_w = torch.zeros((batch_size,  self.maxlen['points'])).to(self.device)  # Poids d'attention
+            attn_w_out= torch.zeros((batch_size,self.maxlen['en'],self.maxlen['points']))
 
         # Boucle pour tous les symboles de sortie
         for i in range(max_len):
@@ -98,6 +99,7 @@ class Trajectory2seq(nn.Module):
                 attn_out, attn_w = self.attentionModule(out, encoder_outs)
                 out = torch.cat((out[:, 0, :], attn_out), 1)
                 out = self.att_combine(out)[:,None,:]
+                attn_w_out[:,i,:]=attn_w
 
             # BN
             if self.batchNorm:
@@ -106,7 +108,7 @@ class Trajectory2seq(nn.Module):
             vec_in = torch.argmax(out, dim=2)
             vec_out[:, :, i] = out[:, 0, :]
 
-        return vec_out, hidden, attn_w
+        return vec_out, hidden, attn_w_out
 
     def forward(self, x):
         # Passant avant
