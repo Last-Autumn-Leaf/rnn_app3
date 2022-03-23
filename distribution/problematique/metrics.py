@@ -51,8 +51,7 @@ def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gr
     plt.title(title)
     plt.colorbar()
 
-def Attention_weight():
-    ...
+
 
 
 if __name__ == "__main__":

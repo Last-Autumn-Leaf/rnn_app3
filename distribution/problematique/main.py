@@ -20,17 +20,18 @@ if __name__ == '__main__':
     n_workers = 0          # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
     batch_size=100
     train_val_split = .7
-    hidden_dim=23
-    n_layers=5
+    hidden_dim=19
+    n_layers=3
     lr=0.01
     with_attention=True
-    bidir=False
+    bidir=True
     #'RNN', 'GRU' or 'LTSM'
     RNN_MODE='GRU'
-    # À compléter
+
+
     n_epochs = 100
     TreatDataAsVectors=True
-    presentation = False
+    presentation = True
     start = time.time()
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
@@ -75,10 +76,7 @@ if __name__ == '__main__':
         trainning=False
 
 
-    # Initialisation des variables
-    if seed is not None:
-        torch.manual_seed(seed)
-        np.random.seed(seed)
+
 
     if trainning:
 
@@ -123,13 +121,7 @@ if __name__ == '__main__':
                 running_loss_train += loss.item()
 
                 # Affichage pendant l'entraînement
-                '''print(
-                    'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
-                        epoch, n_epochs, batch_idx * batch_size, len(dataload_train.dataset),
-                                            100. * batch_idx * batch_size / len(dataload_train.dataset),
-                                            running_loss_train / (batch_idx + 1),
-                                            dist / ((batch_idx+1)* len(dataload_train))), end='\r')
-                print('\n')'''
+
             print(
                     'Train - Epoch: {}/{} [{}/{} ({:.0f}%)] Average Loss: {:.6f} Average Edit Distance: {:.6f}'.format(
                         epoch, n_epochs, (batch_idx + 1) * batch_size, len(dataload_train.dataset),
@@ -174,7 +166,7 @@ if __name__ == '__main__':
 
 
             #condition to save the model with the best distance
-            if bestDist <dist / len(dataload_val) :
+            if bestDist >dist / len(dataload_val) :
                 # Enregistrer les poids
                 print('saving model with a validation distance of ',dist / len(dataload_val) )
                 print('')
@@ -212,8 +204,11 @@ if __name__ == '__main__':
 
 
 
+
+
         # Charger les données de tests
         model = torch.load('model.pt')
+        print("Number of parameters : ", sum(p.numel() for p in model.parameters()))
         dataset.symb2int = model.symb2int
         dataset.int2symb = model.int2symb
         model.maxlen=dataset.max_len
@@ -222,7 +217,7 @@ if __name__ == '__main__':
         Attention_data=[]
 
         D = np.zeros((29, 29))
-        randintList=[]
+
         numberOfTest=100
         # Affichage des résultats de test
         for i in range(numberOfTest):
@@ -249,6 +244,7 @@ if __name__ == '__main__':
             Attention_data.append({'guessed':clean_guess_word(out_seq,'$','@'),
                                'index':randomIndex,
                                'attentionW':attn.detach().cpu()[0]})
+            print('Calcul index ',i,end='\r')
 
         # Affichage de la matrice de confusion
         norm =np.sum(D,axis=1)

@@ -35,13 +35,16 @@ class HandwrittenWords(Dataset):
 
         # Ajout du padding aux séquences
         max_length = 5
+
         max_size_coords=0
+        #searching for longest sequence and pad words
         for words in self.data:
             words[0] += self.stop_symbol
             max_size_coords=len(words[1][0]) if max_size_coords<len(words[1][0]) else max_size_coords
             while (len(words[0]) < max_length + 1):
                 words[0] += self.pad_symbol
 
+        #Traitement des sequences
         for words in self.data:
             array=words[1]
             if normalisation :
@@ -51,7 +54,7 @@ class HandwrittenWords(Dataset):
                 #Scaling
                 max_xy = np.array([[np.max(array[0])], [np.max(array[1])]])
                 array/=max_xy
-
+            #padding, we repeat the last coords
             if len(array[0]) != max_size_coords:
                 n=max_size_coords-len(array[0])
                 pad_points=np.ones((2,n))
@@ -59,21 +62,22 @@ class HandwrittenWords(Dataset):
                 pad_points*=xy[:,None]
                 #words[1]=np.concatenate((array,pad_points), axis=1)
                 array=np.concatenate((array,pad_points), axis=1)
-
+            # treat as vector
             if asVector:
                 array = array[:, 1:] - array[:, 0:-1]
             words[1] =array
 
 
-        #vérifcation padding
+
         if asVector:
             max_size_coords-=1
+        # vérifcation padding
         for words in self.data :
             if len(words[0]) !=max_length+1:
                 print("Error padding word len=",len(words[0]))
             if len(words[1][0]) !=max_size_coords:
                 print("error pad seq, length=",len(words[1][0]))
-
+        #tailles emx des sequences et des mots
         self.max_len={
             'points':max_size_coords,
             'en':max_length+1
@@ -86,7 +90,8 @@ class HandwrittenWords(Dataset):
         word,seq=self.data[idx]
         word=[self.symb2int[letter] for letter in word]
         seq=seq.T
-        #word=torch.stack(word)
+        #max_size_coords x 2
+
         return word, seq
 
     def visualisation(self, idx):
@@ -106,6 +111,7 @@ class HandwrittenWords(Dataset):
         if self.asVector:
             for i in range(len(seq)):
                 seq[i] += seq[i - 1] if i != 0 else np.zeros((2))
+
         plt.figure(figsize=(9, 6))
         ax0=plt.subplot(3,1 ,3)
         ax0.plot(seq[:, 0], seq[:, 1], '-o',markersize=5)
