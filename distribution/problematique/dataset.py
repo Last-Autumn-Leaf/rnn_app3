@@ -87,16 +87,14 @@ class HandwrittenWords(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        word,seq=self.data[idx]
-        word=[self.symb2int[letter] for letter in word]
-        seq=seq.T
-        #max_size_coords x 2
-
+        word, seq = self.data[idx]
+        word = [self.symb2int[letter] for letter in word]
+        seq = seq.T
         return word, seq
 
     def visualisation(self, idx):
         word, seq = self[idx]
-        word=''.join([self.int2symb[entier] for entier in word])
+        word =''.join([self.int2symb[entier] for entier in word])
         if self.asVector:
             for i in range(len(seq)):
                 seq[i]+= seq[i-1] if i!=0 else np.zeros((2))
@@ -105,7 +103,7 @@ class HandwrittenWords(Dataset):
         plt.show()
 
     def visualisation_attention(self,Attention_data):
-        idx=Attention_data['index']
+        idx = Attention_data['index']
         word, seq = self[idx]
         word = ''.join([self.int2symb[entier] for entier in word])
         if self.asVector:

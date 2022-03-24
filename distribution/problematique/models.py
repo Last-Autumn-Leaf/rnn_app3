@@ -7,15 +7,16 @@ from torch import nn
 import numpy as np
 import matplotlib.pyplot as plt
 
-mode_dict={
-    'RNN':nn.RNN,
-    'GRU':nn.GRU,
-    'LSTM':nn.LSTM
+# Types d'unités récurrentes
+mode_dict = {
+    'RNN': nn.RNN,
+    'GRU': nn.GRU,
+    'LSTM': nn.LSTM
 }
 
 class Trajectory2seq(nn.Module):
     def __init__(self, hidden_dim, n_layers, int2symb, symb2int, dict_size, device, maxlen,
-            attn=False,mode='RNN',bidirectional=False,batchNorm=False):
+            attn=False, mode='RNN', bidirectional=False, batchNorm=False):
         super(Trajectory2seq, self).__init__()
         # Definition des parametres
         self.hidden_dim = hidden_dim
@@ -28,6 +29,7 @@ class Trajectory2seq(nn.Module):
         self.attn = attn
         self.mode=mode
         self.batchNorm=batchNorm
+
         # Definition des couches
         # Couches pour rnn
         self.decoder_embedding = nn.Embedding(self.dict_size, hidden_dim)
@@ -38,13 +40,13 @@ class Trajectory2seq(nn.Module):
                             num_layers=2*n_layers if bidirectional else n_layers, batch_first=True)
 
         # Couches pour attention
-        self.att_combine = nn.Linear(3*hidden_dim if bidirectional else  2*hidden_dim, hidden_dim)
+        self.att_combine = nn.Linear(3*hidden_dim if bidirectional else 2*hidden_dim, hidden_dim)
         self.hidden2query = nn.Linear(hidden_dim, 2*hidden_dim if bidirectional else hidden_dim)
         self.soft_max = nn.Softmax(dim=1)
-        self.cos = nn.CosineSimilarity(dim=2, eps=1e-6)
+        self.cos = nn.CosineSimilarity(dim=2, eps=1e-6) # Similarité cosinus
 
 
-        # BN
+        # Normalisations des lots
         if self.batchNorm :
             self.BN=nn.BatchNorm1d(1)
         # Couche dense pour la sortie
@@ -53,10 +55,11 @@ class Trajectory2seq(nn.Module):
 
     def encoder(self, x):
         # Encodeur
+
         if self.mode=='LSTM':
             out, (hidden,c) = self.encoder_layer(x)
             return out, hidden,c
-        else :
+        else:
             out, hidden = self.encoder_layer(x)
             return out, hidden
 
@@ -118,7 +121,6 @@ class Trajectory2seq(nn.Module):
         else :
             out, h = self.encoder(x)
             out, hidden, attn = self.decoder(out, h)
-
 
         return out, hidden, attn
     

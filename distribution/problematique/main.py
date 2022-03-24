@@ -1,6 +1,13 @@
 # GRO722 problématique
 # Auteur: Jean-Samuel Lauzon et  Jonathan Vincent
 # Hivers 2022
+"""
+Code complété par :
+Carl-André GASSETTE   - cip : gasc3203
+Youcef Amine AISSAOUI - cip : aisy2303
+
+Dans le cadre du projet APP3 : Réseaux de Neurones Récurrents
+"""
 from torch.utils.data import Dataset, DataLoader
 
 from dataset import *
@@ -11,27 +18,27 @@ import time
 if __name__ == '__main__':
 
     # ---------------- Paramètres et hyperparamètres ----------------#
-    force_cpu = False           # Forcer a utiliser le cpu?
-    trainning = False           # Entrainement?
+    force_cpu = False          # Forcer a utiliser le cpu?
+    trainning = True           # Entrainement?
     test = True                # Test?
     learning_curves = True     # Affichage des courbes d'entrainement?
     gen_test_images = True     # Génération images test?
-    seed = 1                # Pour répétabilité
-    n_workers = 0          # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
-    batch_size=100
+    seed = 1                   # Pour répétabilité
+    n_workers = 0              # Nombre de threads pour chargement des données (mettre à 0 sur Windows)
+    batch_size = 100
     train_val_split = .7
-    hidden_dim=19
-    n_layers=3
-    lr=0.01
-    with_attention=True
-    bidir=True
+    hidden_dim = 19
+    n_layers = 3
+    lr = 0.01
+    with_attention=True        # Activation du module d'attention
+    bidir = True                 # Bidirectionnalité
     #'RNN', 'GRU' or 'LTSM'
-    RNN_MODE='GRU'
+    RNN_MODE='GRU'             # Choix d'unité récurrente
 
 
     n_epochs = 100
-    TreatDataAsVectors=True
-    presentation = True
+    TreatDataAsVectors=True    # Pré-traitement du dataset : coordonnées -> vecteur
+    presentation = True        # Mode présentation pour afficher les résultats sur les données de test
     start = time.time()
 
     # ---------------- Fin Paramètres et hyperparamètres ----------------#
@@ -44,9 +51,11 @@ if __name__ == '__main__':
     # Choix du device
     device = torch.device("cuda" if torch.cuda.is_available() and not force_cpu else "cpu")
 
-    if not presentation  :
+    if not presentation:
+
         # Instanciation de l'ensemble de données
-        dataset=HandwrittenWords('data_trainval.p',normalisation=False,asVector=TreatDataAsVectors)
+        dataset = HandwrittenWords('data_trainval.p',normalisation=False,asVector=TreatDataAsVectors)
+
         # Séparation de l'ensemble de données (entraînement et validation)
         n_train_samp = int(len(dataset) * train_val_split)
         n_val_samp = len(dataset) - n_train_samp
@@ -71,9 +80,8 @@ if __name__ == '__main__':
 
         print("Number of parameters : ", sum(p.numel() for p in model.parameters()))
 
-
-    else :
-        trainning=False
+    else:
+        trainning = False
 
 
 
@@ -84,14 +92,14 @@ if __name__ == '__main__':
         if learning_curves:
             train_dist = []  # Historique des distances
             train_loss = []  # Historique des coûts
-            val_dist = []  # Historique des distances
-            val_loss = []  # Historique des coûts
+            val_dist = []    # Historique des distances
+            val_loss = []    # Historique des coûts
             fig, ax = plt.subplots(2)  # Initialisation figure
 
         # Fonction de coût et optimizateur
-        criterion = nn.CrossEntropyLoss(ignore_index=2)  # ignorer les symboles <pad>
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-        bestDist=6
+        criterion = nn.CrossEntropyLoss(ignore_index=2)          # ignorer les symboles <pad>
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)  # Optimisateur ADAM
+        bestDist = 6
 
         for epoch in range(1, n_epochs + 1):
             # Entraînement
@@ -100,7 +108,7 @@ if __name__ == '__main__':
             for batch_idx, data in enumerate(dataload_train):
                 word, seq = data
                 seq = seq.to(device).float()
-                word=torch.stack(word).T.long()
+                word = torch.stack(word).T.long()
 
                 optimizer.zero_grad()  # Mise a zero du gradient
                 output, hidden, attn = model(seq)  # Passage avant
@@ -166,12 +174,12 @@ if __name__ == '__main__':
 
 
             #condition to save the model with the best distance
-            if bestDist >dist / len(dataload_val) :
+            if bestDist >dist / len(dataload_val):
                 # Enregistrer les poids
                 print('saving model with a validation distance of ',dist / len(dataload_val) )
                 print('')
                 torch.save(model, 'model.pt')
-                bestDist=dist / len(dataload_val)
+                bestDist = dist / len(dataload_val)
 
 
 
@@ -189,8 +197,9 @@ if __name__ == '__main__':
                 plt.draw()
                 plt.pause(0.01)
 
+        # Calcul du temps de l'entrainement
         end = time.time()
-        print('Temps entrainement : ',end - start)
+        print('Temps entrainement : ', end - start)
         if learning_curves:
                 plt.show()
                 plt.close('all')
@@ -198,20 +207,18 @@ if __name__ == '__main__':
     if test:
         # Évaluation
 
-        if presentation :
+        if presentation:
+            # Charger les données de tests
             dataset_test_file_name='data_test_no_labels.p'
             dataset = HandwrittenWords(dataset_test_file_name, normalisation=False, asVector=TreatDataAsVectors)
 
-
-
-
-
-        # Charger les données de tests
+        # Chargement du meilleur model
         model = torch.load('model.pt')
         print("Number of parameters : ", sum(p.numel() for p in model.parameters()))
+
         dataset.symb2int = model.symb2int
         dataset.int2symb = model.int2symb
-        model.maxlen=dataset.max_len
+        model.maxlen = dataset.max_len
 
         # Affichage de l'attention
         Attention_data=[]
