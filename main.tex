@@ -1,0 +1,99 @@
+\documentclass{article}
+\usepackage{textcomp}
+\usepackage{graphicx} % table
+\usepackage[utf8]{inputenc}
+\usepackage[letterpaper, tmargin=1.0in, lmargin=1.25in, rmargin=1.25in, bmargin=1.0in]{geometry}
+%POUR EQUATIONS
+\usepackage{amsmath}
+\usepackage{outlines}
+\addtocounter{equation}{-1}
+%POUR TABLEAUX
+\usepackage{caption}
+%POUR LES GRAPHIQUES
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{float}
+\graphicspath{ {./images/} }
+%POUR LES RÉFÉRENCES
+\renewcommand{\refname}{Références}
+%POUR LES ANNEXES
+\usepackage[title, header]{appendix}
+\renewcommand{\appendixname}{Annexe}
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+
+%POUR LES PAGES EN PAYSAGE
+\usepackage{rotating}
+\usepackage{color}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage{subfiles}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+
+\author{Carl-André Gassette - gasc3203 \\
+Youcef Amine Aissaoui - aisy2303 }
+\date{2022-03-21}
+\title{RAPPORT D'APP3}
+
+\newcommand{\titreCours}{Réseaux de neurones récurrents}
+\newcommand{\numeroAPP}{GRO722}
+\newcommand{\nomsProfesseurs}{Sean Wood}
+\newcommand{\numeroEquipe}{14}
+
+\renewcommand{\contentsname}{Table des matières}
+\renewcommand{\baselinestretch}{1.5}
+
+
+\begin{document}
+\makeatletter
+\begin{titlepage}
+\begin{figure}
+    \centering
+    \includegraphics[width=60mm]{logoUDES.png}
+\end{figure}
+	\centering
+        \huge{UNIVERSITÉ DE SHERBROOKE}\\
+        Faculté de génie\\
+        Département de génie électrique et génie informatique\\
+        \vspace{1cm}
+        
+        \textsc{\huge{\@title}}\\
+        \vspace{1cm}
+        
+        {\huge{\titreCours}}\\
+        \numeroAPP\\
+        \vspace{1cm}
+        
+        {\large Présenté à :}\\
+        \nomsProfesseurs\\
+        \vspace{1cm}
+        
+        {\large Par :}\\
+        {\@author}\\
+        
+	\vfill
+        {\large Sherbrooke - \@date}
+
+\end{titlepage}
+\makeatother
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\setcounter{equation}{0}
+
+\subfile{sections/introduction}
+
+\subfile{sections/architecture}
+
+\subfile{sections/interpretation}
+
+\subfile{sections/conclusion}
+\end{document}
