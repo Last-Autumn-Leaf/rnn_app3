@@ -221,17 +221,16 @@ if __name__ == '__main__':
         model.maxlen = dataset.max_len
 
         # Affichage de l'attention
-        Attention_data=[]
+        Attention_data = []
 
         D = np.zeros((29, 29))
 
-        numberOfTest=100
+        numberOfTest = 100
         # Affichage des résultats de test
         for i in range(numberOfTest):
             # Extraction d'une séquence du dataset de validation
-            randomIndex=np.random.randint(0, len(dataset))
+            randomIndex = np.random.randint(0, len(dataset))
             word, seq = dataset[randomIndex]
-
 
             seq=torch.from_numpy(seq).float().to(device)[None,:,:]
             word = torch.IntTensor(word)
@@ -240,23 +239,20 @@ if __name__ == '__main__':
 
             D += confusion_matrix(word.detach().cpu().tolist(), output)
 
-            #affichage
+            # affichage
             out_seq = [model.int2symb[i] for i in output]
-            target=[model.int2symb[i] for i in word.detach().cpu().tolist()]
-            #print('target : ',''.join(target))
-            #print('guessed : ',''.join(out_seq))
-            #print("  --------  ")
+            target = [model.int2symb[i] for i in word.detach().cpu().tolist()]
 
-            #stockage de l'attention des lettres
-            Attention_data.append({'guessed':clean_guess_word(out_seq,'$','@'),
-                               'index':randomIndex,
-                               'attentionW':attn.detach().cpu()[0]})
-            print('Calcul index ',i,end='\r')
+            # stockage de l'attention des lettres
+            Attention_data.append({'guessed': clean_guess_word(out_seq, '$', '@'),
+                                   'index': randomIndex,
+                                   'attentionW': attn.detach().cpu()[0]})
+            print('Calcul index ', i, end='\r')
 
         # Affichage de la matrice de confusion
-        norm =np.sum(D,axis=1)
-        norm[norm ==0] = 1
-        D=D/norm[None,:]
+        norm = np.sum(D, axis=1)
+        norm[norm == 0] = 1
+        D = D/norm[None, :]
         plot_confusion_matrix(D)
         plt.show()
 
